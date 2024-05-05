@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Aplikasi Kasir Elektronik Mie Ayam Gilar-Gilar</title>
+
+  <!-- Bootstrap CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-T3c6CoIi6uLrA9TneNEoa7RxnatzjcDSCmG1MXxSR1GAsXEV/Dwwykc2MPK8M2HN" crossorigin="anonymous">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<style>
+  body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: #f8f9fa;
+    transition: background-color 0.3s ease;
+    color: #333;
+  }
+
+  .container {
+    margin-top: 20px;
+  }
+
+  .card {
+    margin-bottom: 20px;
+    border: none;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  }
+
+  .card-header {
+    background-color: #3498db;
+    color: #fff;
+    border: none;
+  }
+
+  .btn-primary {
+    background-color: #2ecc71;
+    border-color: #2ecc71;
+    color: #fff;
+    transition: background-color 0.3s ease;
+  }
+
+  .btn-primary:hover {
+    background-color: #27ae60;
+    border-color: #27ae60;
+  }
+
+  .btn-warning {
+    background-color: #f39c12;
+    border-color: #f39c12;
+    color: #fff;
+    transition: background-color 0.3s ease;
+  }
+
+  .btn-warning:hover {
+    background-color: #d35400;
+    border-color: #d35400;
+    color: #fff;
+  }
+
+  .btn-danger {
+    background-color: #e74c3c;
+    border-color: #e74c3c;
+    color: #fff;
+    transition: background-color 0.3s ease;
+  }
+
+  .btn-danger:hover {
+    background-color: #c0392b;
+    border-color: #c0392b;
+  }
+
+  .app-title {
+    text-align: center;
+    margin-bottom: 20px;
+  }
+
+  .form-container {
+    max-width: 1000px;
+    margin: 0 auto;
+  }
+
+  .form-container form {
+    width: 500px;
+    margin: 0 auto;
+  }
+
+  @media (max-width: 767px) {
+  .form-container form {
+      width: 300px;
+      padding: 0 auto;
+    }
+  }
+
+  .data-container {
+    margin-top: 20px;
+  }
+
+  .total-container {
+    margin-top: 20px;
+  }
+</style>
+<body>
+  <script>
+    // Kelas untuk merepresentasikan Barang
+    class Barang {
+      constructor(nama, harga, stok) {
+        this.nama = nama;
+        this.harga = harga;
+        this.stok = stok;
+        this.totalHarga = harga * stok;
+      }
+    }
+
+    // Kelas untuk mengelola komunikasi antara komponen HTML dan logika aplikasi
+    class AppUI {
+      constructor(app) {
+        this.app = app;
+        this.init();
+      }
+
+      init() {
+        const container = document.createElement('div');
+        container.className = 'container';
+        container.innerHTML = `
+        <div class="app-title">
+    <h1>KASIR MIE AYAM GILAR-GILAR</h1>
+</div>
+<div class="row">
+    <!-- Form untuk menambah/mengedit Barang -->
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">Input Item</div>
+            <div class="card-body form-container">
+                <form>
+                    <div class="mb-3">
+                        <label for="namaBarang" class="form-label">Nama Item</label>
+                        <select class="form-select" id="nama">
+                            <option value="mie_ayam">Mie Ayam</option>
+                            <option value="mie_ayam_bakso">Mie Ayam Bakso</option>
+                            <option value="mie_ayam_pangsit">Mie Ayam Pangsit</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="harga" class="form-label">Harga</label>
+                        <select class="form-select" id="harga">
+                            <option value="16000">Rp 16.000</option>
+                            <option value="19000">Rp 19.000</option>
+                            <option value="20000">Rp 20.000</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="stok" class="form-label">Total Pesanan</label>
+                        <input type="number" class="form-control" id="stok" placeholder="Masukkan jumlah pesanan" onkeypress="app.allowNumbersOnly(event)">
+                    </div>
+                    <button type="button" id="tambah-update-btn" class="btn btn-primary">Tambah</button>
+                    <button type="button" class="btn btn-warning" id="reset-btn">Reset</button>
+                </form>
+
+                </div>
+              </div>
+            </div>
+            <!-- Daftar Barang -->
+            <div class="col-md-6">
+              <div class="card">
+                <div class="card-header">List Item</div>
+                <div class="card-body data-container">
+                  <table class="table table-bordered">
+                    <thead>
+                      <tr>
+                        <th>Nama</th>
+                        <th>Total</th>
+                        <th>Harga</th>
+                        <th>Total Harga</th>
+                        <th>Action</th>
+                      </tr>
+                    </thead>
+                    <tbody id="daftar-barang-container"></tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </div>
+          <!-- Total Harga -->
+          <div class="row">
+            <div class="col-md-12">
+              <div class="card">
+                <div class="card-header">Total Harga</div>
+                <div class="card-body total-container" id="total-harga-container"></div>
+              </div>
+            </div>
+          </div>
+        `;
+
+        document.body.appendChild(container);
+
+        // Event listeners menggunakan addEventListener
+        document.getElementById('tambah-update-btn').addEventListener('click', () => this.app.addBarang());
+        document.getElementById('reset-btn').addEventListener('click', () => this.app.resetForm());
+        document.getElementById('harga').addEventListener('keypress', (event) => this.app.allowNumbersOnly(event));
+        document.getElementById('stok').addEventListener('keypress', (event) => this.app.allowNumbersOnly(event));
+
+        this.render(); // Render komponen saat aplikasi dimuat
+      }
+
+      render() {
+        // Render komponen HTML menggunakan data dari logika aplikasi
+        const daftarBarangContainer = document.getElementById('daftar-barang-container');
+        daftarBarangContainer.innerHTML = '';
+
+        this.app.daftarBarang.forEach((barang, index) => {
+          const row = document.createElement('tr');
+          row.innerHTML = `
+            <td>${barang.nama}</td>
+            <td>${barang.stok}</td>
+            <td>${barang.harga}</td>
+            <td>${barang.totalHarga}</td>
+            <td>
+              <button class="btn btn-warning btn-sm" onclick="app.editBarang(${index})">Edit</button>
+              <button class="btn btn-danger btn-sm" onclick="app.deleteBarang(${index})">Hapus</button>
+            </td>
+          `;
+          daftarBarangContainer.appendChild(row);
+        });
+
+        this.renderTotalHarga();
+      }
+
+      renderTotalHarga() {
+        // Render total harga
+        const totalHargaContainer = document.getElementById('total-harga-container');
+        totalHargaContainer.innerHTML = '';
+
+        const totalHargaPerBarang = this.app.daftarBarang.map(barang => `${barang.nama}: ${barang.totalHarga}`);
+        const jumlahHargaKeseluruhan = this.app.calculateJumlahHargaKeseluruhan();
+
+        totalHargaPerBarang.forEach(harga => {
+          const p = document.createElement('p');
+          p.textContent = harga;
+          totalHargaContainer.appendChild(p);
+        });
+
+        const h4 = document.createElement('h4');
+        h4.textContent = 'Jumlah Harga Keseluruhan:';
+        totalHargaContainer.appendChild(h4);
+
+        const p = document.createElement('p');
+        p.textContent = jumlahHargaKeseluruhan;
+        totalHargaContainer.appendChild(p);
+      }
+    }
+
+    // Kelas Aplikasi Utama
+    class App {
+      constructor() {
+        this._daftarBarang = [];
+        this._editIndex = null;
+        this.appUI = new AppUI(this);
+      }
+
+      get daftarBarang() {
+        return this._daftarBarang;
+      }
+
+      set daftarBarang(value) {
+        this._daftarBarang = value;
+      }
+
+      get editIndex() {
+        return this._editIndex;
+      }
+
+      set editIndex(value) {
+        this._editIndex = value;
+      }
+
+      addBarang() {
+        const namaInput = document.getElementById('nama');
+        const hargaInput = document.getElementById('harga');
+        const stokInput = document.getElementById('stok');
+
+        const nama = namaInput.value;
+        const harga = parseFloat(hargaInput.value);
+        const stok = parseInt(stokInput.value);
+
+        if (!isNaN(harga) && !isNaN(stok) && nama !== '') {
+          if (this.editIndex !== null) {
+            const updatedBarang = new Barang(nama, harga, stok);
+            this.daftarBarang[this.editIndex] = updatedBarang;
+            this.editIndex = null;
+          } else {
+            const newBarang = new Barang(nama, harga, stok);
+            this.daftarBarang.push(newBarang);
+          }
+
+          this.appUI.render();
+          this.resetForm();
+        }
+      }
+
+      renderDaftarBarang() {
+        this.appUI.render();
+      }
+
+      calculateJumlahHargaKeseluruhan() {
+        return this.daftarBarang.reduce((total, barang) => total + barang.totalHarga, 0);
+      }
+
+      editBarang(index) {
+        const barang = this.daftarBarang[index];
+        document.getElementById('nama').value = barang.nama;
+        document.getElementById('harga').value = barang.harga;
+        document.getElementById('stok').value = barang.stok;
+        this.editIndex = index;
+        document.getElementById('tambah-update-btn').innerText = 'Update';
+      }
+
+      deleteBarang(index) {
+        const confirmation = confirm('Apakah Anda yakin ingin menghapus barang ini?');
+
+        if (confirmation) {
+          this.daftarBarang.splice(index, 1);
+          this.renderDaftarBarang();
+        }
+      }
+
+      resetForm() {
+        document.getElementById('nama').value = '';
+        document.getElementById('harga').value = '';
+        document.getElementById('stok').value = '';
+        this.editIndex = null;
+        document.getElementById('tambah-update-btn').innerText = 'Tambah';
+      }
+
+      allowNumbersOnly(event) {
+        const charCode = event.charCode;
+        if (charCode < 48 || charCode > 57) {
+          event.preventDefault();
+        }
+      }
+    }
+
+    const app = new App();
+  </script>
+
+  <!-- Bootstrap JavaScript -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-C6RzsynM9kWDrMNeT87bh95OGNyZPhcTNXj1NW7RuBCsyN/o0jlpcV8Qyq46cDfL" crossorigin="anonymous"></script>
+</body>
+</html>
